@@ -18,11 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * WebSocketHandler
- * Created by pigme on 2016-03-24.
- */
-
 public class SpringWebSocketHandler implements IWebSocketHandler {
     private static final Logger LOG = LogManager.getLogger(SpringWebSocketHandler.class);
 
