@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+       http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+    <!--spring component-scan-->
+    <context:component-scan base-package="com.xxx" use-default-filters="false">
+        <context:include-filter type="annotation" expression="com.xxx.common.annotations.web.WebSocketController" />
+    </context:component-scan>
+
+    <!-- 具体项目中实现，实现IEndPointConfigurer接口的终结点相关配置，也可以以SpringWebSocketHandler属性的方式注入 -->
+    <bean class="com.xxx.services.controller.NotifyEndpointConfigurer" />
+    <!-- WebSocketHandler核心类，Session处理、权限校验等等,在下面的SpringWebSocketHandlerDecoratorFactory处织入 -->
+    <bean id="socketHandler" class="com.xxx.common.web.websocket.SpringWebSocketHandler" />
+    <!-- Web socket连接拦截器 -->
+    <bean id="socketInterceptor" class="com.xxx.common.web.websocket.SpringWebSocketInterceptor" />
+    <!-- com.xxx.common.web socket based STOMP with sockjs -->
+    <websocket:message-broker application-destination-prefix="/app">
+        <websocket:transport>
+            <websocket:decorator-factories>
+                <!-- 通过装饰器织入自定义WebSocketHandler -->
+                <bean class="com.xxx.common.web.websocket.SpringWebSocketHandlerDecoratorFactory" />
+            </websocket:decorator-factories>
+        </websocket:transport>
+        <websocket:stomp-endpoint path="/notify" allowed-origins="*">
+            <websocket:handshake-interceptors>
+                <ref bean="socketInterceptor" />
+            </websocket:handshake-interceptors>
+        </websocket:stomp-endpoint>
+        <websocket:stomp-endpoint path="/notify/sockjs" allowed-origins="*">
+            <websocket:handshake-interceptors>
+                <ref bean="socketInterceptor" />
+            </websocket:handshake-interceptors>
+            <websocket:sockjs />
+        </websocket:stomp-endpoint>
+        <websocket:simple-broker prefix="/topic,/queue" />
+        <websocket:broker-channel>
+            <websocket:interceptors>
+                <!-- Web socket消息拦截器 -->
+                <bean class="com.xxx.common.web.websocket.SpringWebSocketChannelInterceptor" />
+            </websocket:interceptors>
+        </websocket:broker-channel>
+    </websocket:message-broker>
+
+    <!-- 全局消息缓冲设置 -->
+    <bean class="org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean">
+        <property name="maxTextMessageBufferSize" value="8192"/>
+        <property name="maxBinaryMessageBufferSize" value="8192"/>
+    </bean>
+</beans>
